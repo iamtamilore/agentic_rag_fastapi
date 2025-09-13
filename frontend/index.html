@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical RAG Co-pilot</title>
+    <!-- Using Tailwind CSS via CDN for rapid prototyping -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Using a clean, professional font like Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for better scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #a8a8a8;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex flex-col h-screen">
+
+    <!-- Header -->
+    <header class="bg-white shadow-md p-4 flex items-center justify-between z-10">
+        <div class="flex items-center space-x-3">
+            <!-- Logo Concept -->
+            <svg class="w-8 h-8 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h5M5.5 9.5L9 6m5 4h5v5M14.5 13.5L18 10m-13 5v5h5M5.5 18.5L9 15m5-4h5v5M14.5 17.5L18 14M9 6l5 4m0 4l-5 4"></path></svg>
+            <h1 class="text-xl font-bold text-gray-700">Clinical RAG Co-pilot</h1>
+        </div>
+        <div class="text-sm text-gray-500 font-semibold">Dr. Ada Lovelace</div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow flex p-4 space-x-4 overflow-hidden">
+
+        <!-- Panel 1: Patient Context (The Guard Rail) -->
+        <aside class="w-1/4 bg-white rounded-lg shadow p-6 flex flex-col">
+            <h2 class="text-lg font-semibold border-b pb-2 mb-4">Patient Context</h2>
+            
+            <!-- Patient Lookup Form (Initially Shown) -->
+            <div class="space-y-4 hidden" id="patient-lookup-form">
+                <p class="text-sm text-gray-500">Find a patient to begin the session.</p>
+                <div>
+                    <label for="patient-name" class="block text-sm font-medium text-gray-600">Full Name</label>
+                    <input type="text" id="patient-name" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                    <label for="patient-dob" class="block text-sm font-medium text-gray-600">Date of Birth</label>
+                    <input type="date" id="patient-dob" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <button id="lock-patient-btn" class="w-full bg-blue-800 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
+                    Find & Lock Patient
+                </button>
+            </div>
+
+            <!-- Locked Patient Info (Shown by default for this rich prototype) -->
+            <div class="flex flex-col flex-grow" id="patient-locked-info">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex justify-between items-center">
+                        <p class="font-bold text-lg text-blue-900">Gbenga Kayode</p>
+                        <span class="text-xs font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded-full">SESSION LOCKED</span>
+                    </div>
+                    <p class="text-sm text-gray-600">DOB: 30 Jan 1995</p>
+                    <p class="text-sm text-gray-600">Patient ID: 3</p>
+                </div>
+                <h3 class="font-semibold mt-6 mb-2 text-gray-600">Record Timeline</h3>
+                <div class="flex-grow overflow-y-auto pr-2 -mr-2">
+                    <ul class="space-y-2 text-sm text-gray-700">
+                        <!-- Populated with the new, rich data -->
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2025-08-22:</b> Sprained Ankle</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2025-02-20:</b> Laryngitis</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2024-11-15:</b> Diabetes Check-up</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2024-06-10:</b> Poison Ivy</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2024-01-05:</b> Routine Physical</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2023-10-01:</b> Tendonitis</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2023-07-20:</b> Diabetes Follow-up</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2022-06-15:</b> Allergic Reaction</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2021-05-10:</b> Routine Physical</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2020-04-05:</b> Diabetes Check-up</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2019-03-30:</b> Acne Vulgaris</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2018-02-25:</b> Diabetes Follow-up</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2017-08-20:</b> Type 2 Diabetes Diagnosis</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2016-07-15:</b> Pre-diabetes Follow-up</li>
+                        <li class="p-2 bg-gray-50 rounded-md cursor-pointer hover:bg-blue-100"><b>2015-06-10:</b> Routine Check-up</li>
+                    </ul>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Panel 2: Co-pilot Interaction (Center) -->
+        <section class="w-1/2 flex flex-col bg-white rounded-lg shadow">
+            <div class="flex-grow p-4 space-y-6 overflow-y-auto">
+                 <!-- Interaction History -->
+                <div class="flex items-start justify-end">
+                    <div class="bg-blue-800 text-white p-3 rounded-lg max-w-lg shadow">
+                        <p class="font-semibold">You:</p>
+                        <p>Summarize this patient's history with diabetes.</p>
+                    </div>
+                </div>
+                <div class="flex items-start">
+                    <div class="bg-gray-200 p-3 rounded-lg max-w-lg shadow">
+                        <p class="font-semibold text-gray-700">Co-pilot:</p>
+                        <p>The patient was diagnosed with Type 2 Diabetes on 2017-08-20 after A1C levels reached 7.1%. They were started on Metformin and have had regular follow-ups. A1C levels have been stable and well-controlled since, with readings of 6.5% in 2020 and 6.7% in 2024.</p>
+                        <div class="flex space-x-2 mt-2">
+                           <button class="text-xs text-gray-500 hover:text-green-600">👍</button>
+                           <button class="text-xs text-gray-500 hover:text-red-600">👎</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Live Note Taking Feature -->
+            <div class="p-4 border-t-2 border-gray-200 bg-gray-50">
+                <label for="live-note" class="text-sm font-semibold text-gray-600 mb-2 block">New Clinical Note</label>
+                <textarea id="live-note" rows="4" class="w-full border border-gray-300 rounded-md p-2" placeholder="Type live clinical notes here..."></textarea>
+                <button class="mt-2 w-full bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors">
+                    Save to Patient Record
+                </button>
+            </div>
+            <!-- Query Input Area -->
+            <div class="p-4 border-t">
+                <div class="relative">
+                    <input type="text" class="w-full border border-gray-300 rounded-full p-3 pl-5 pr-16" placeholder="Ask a follow-up question...">
+                    <button class="absolute right-2 top-1/2 -translate-y-1/2 bg-blue-800 text-white rounded-full p-2 hover:bg-blue-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Panel 3: Response & Sources (Right) -->
+        <aside class="w-1/4 bg-white rounded-lg shadow flex flex-col">
+            <h2 class="text-lg font-semibold border-b p-4">Retrieved from Patient Records</h2>
+            <div class="flex-grow p-4 space-y-4 overflow-y-auto pr-2 -mr-2">
+                <div class="border border-green-300 bg-green-50 p-3 rounded-md text-sm shadow">
+                    <h4 class="font-bold text-green-800">Source: 2017-08-20</h4>
+                    <p class="text-gray-700 mt-1">Diagnosis: Type 2 Diabetes. Clinical Notes: <span class="bg-green-200 font-medium">Lifestyle changes were insufficient. A1C now in diabetic range. Diagnosed with Type 2 Diabetes. Starting Metformin.</span></p>
+                </div>
+                <div class="border p-3 rounded-md text-sm">
+                    <h4 class="font-bold">Source: 2020-04-05</h4>
+                    <p class="text-gray-700 mt-1">Diagnosis: Diabetes Check-up. Clinical Notes: <span class="bg-green-200 font-medium">A1C is 6.5%, back in target range. Excellent progress.</span></p>
+                </div>
+                 <div class="border p-3 rounded-md text-sm">
+                    <h4 class="font-bold">Source: 2024-11-15</h4>
+                    <p class="text-gray-700 mt-1">Diagnosis: Diabetes Check-up. Clinical Notes: <span class="bg-green-200 font-medium">Patient remains well-controlled.</span></p>
+                </div>
+            </div>
+        </aside>
+    </main>
+</body>
+</html>

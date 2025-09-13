@@ -1,0 +1,58 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: agentic_rag_fastapi-ollama-1
+    volumes:
+      - ollama_data:/root/.ollama
+    ports:
+      - "11435:11434"
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: agentic_rag_fastapi-db-1
+    restart: always
+    environment:
+      POSTGRES_USER: rag_user
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: rag_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag_user -d rag_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: agentic_rag_fastapi-web-1
+    restart: always
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: rag_user
+      DB_PASSWORD: password123
+      DB_NAME: rag_db
+      OLLAMA_HOST: ollama:11434   # ✅ include port
+      SECRET_KEY: "a_very_secret_key_that_should_be_changed"
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+      
+volumes:
+  ollama_data:
+  postgres_data:

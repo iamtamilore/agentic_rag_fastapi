@@ -1,0 +1,24 @@
+# Core libraries for our RAG pipeline
+langchain
+langchain-community
+langgraph
+langchain-core
+
+# Database ORM and connection library
+psycopg2-binary==2.9.9
+
+# For managing environment variables
+python-dotenv
+
+# For running the FastAPI server
+uvicorn[standard]
+fastapi
+
+# Security and Authentication libraries
+passlib==1.7.4
+bcrypt==4.1.2
+python-jose[cryptography]
+python-multipart
+
+# Testing framework
+pytest

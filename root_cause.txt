@@ -1,0 +1,86 @@
+Excellent idea. Capturing the lessons from these final application-level bugs is crucial. They represent a different class of problems from the initial infrastructure setup.
+
+I've updated your debugging log with a new section detailing the vector type mismatch and the data duplication issue. I've also added the new principles to the "Best Practices" section at the top and expanded the "Key Skills" list.
+
+Here is the complete, updated version for your root_cause.txt file.
+
+Debugging Log & Root Cause Analysis: RAG Application
+Strategic Prevention & Best Practices (Learnings First)
+To build and debug complex Dockerized applications more efficiently, the key is to prevent common errors by following robust patterns.
+
+Environment First, Code Second: An application can't run on a broken foundation. Before debugging Python code, always verify the environment is stable.
+
+Use simple, clean file paths: Avoid special characters like & and spaces in project folder names.
+
+Use directory-to-directory mounts for initialization scripts (- ./db:/docker-entrypoint-initdb.d).
+
+Reset the state: docker compose down --volumes is your best friend for ensuring a truly clean start.
+
+Bake Dependencies into Your Image: Don't download critical dependencies (like an AI model) at runtime. This creates race conditions. If a service requires something to run, include it in its Docker image during the build step.
+
+Write Robust & Idempotent Code:
+
+Avoid brittle file parsing: Use robust methods like named queries (-- name: ...) instead of fragile methods like split(';').
+
+Ensure correct data formatting: Explicitly format data for specialized systems. Don't assume a database driver knows how to interpret a Python list for a custom vector type.
+
+Make data scripts idempotent: Scripts that add data should be safely runnable multiple times without creating duplicates. Use ON CONFLICT clauses or UNIQUE constraints.
+
+Part 1: Infrastructure & Environment Debugging (The Journey to a Stable "Up")
+(This section remains the same, summarizing the initial setup issues)
+
+Initial Symptom: relation "patients" does not exist. The db container was healthy, but the tables weren't created.
+
+Root Cause Analysis: A series of deep, interconnected environmental issues prevented the init.sql script from ever running, primarily a corrupted local filesystem where init.sql had become a directory.
+
+Resolution: Corrected docker-compose.yml, used ls -lb to identify the filesystem corruption, deleted the bad directory and recreated the file, and moved the project to a clean file path.
+
+Part 2: Application Logic & Runtime Debugging (The Journey to a Successful Run)
+Once the infrastructure was stable, the containers started correctly, but the application scripts still failed for new reasons.
+
+Issue 2.1: Brittle SQL Loading
+
+Symptom: ValueError: The query contains more than one '%s' placeholder.
+
+Root Cause: The fragile .split(';') method in db_manager.py misassigned a SQL query with two placeholders to a function that expected only one.
+
+Resolution: Refactored to a robust named-query format (-- name: ...) in both queries.sql and the Python parser.
+
+Issue 2.2: Missing Runtime Dependency (Race Condition)
+
+Symptom: ValueError: ... model "nomic-embed-text" not found.
+
+Root Cause: The web container requested the model from ollama before it had finished downloading.
+
+Resolution: Created a custom ollama.Dockerfile to "bake" the model into the image during the build, eliminating the race condition.
+
+Issue 2.3: Data Type Mismatch & Duplication
+
+Symptom 1: psycopg2.errors.UndefinedFunction: operator does not exist: vector <=> numeric[].
+
+Root Cause 1: The Python script was sending the embedding vector as a standard list of numbers. The pgvector extension requires this data to be explicitly formatted as a string representation of a vector (e.g., '[0.1, 0.2, ...]') to use its specialized <=> operator.
+
+Resolution 1: Modified db_manager.py to convert the vector list to a string (str(embedding_list)) before executing the query.
+
+Symptom 2: The vector search returned three identical documents.
+
+Root Cause 2: The ingestion.py script ran every time the web container started. Because the database volume persisted, this created duplicate entries in the medical_records table on each run.
+
+Resolution 2: Diagnosed with a GROUP BY query. The short-term fix was to run docker compose down --volumes for a clean slate. The long-term, professional solution is to make the table idempotent by adding a UNIQUE(patient_id, content) constraint in init.sql.
+
+Key Skills You've Gained SO FAR
+This project was a masterclass in debugging. You've now personally solved a wide range of common, real-world issues:
+
+Distinguishing Layers: You learned to tell the difference between an application bug (bad SQL parsing), an infrastructure problem (missing pgvector image), and an environment error (corrupted filesystem).
+
+Interpreting Feedback: You saw how a changing error message is valuable feedback.
+
+Using Definitive Diagnostics: You used ls -lb, cat, and SQL GROUP BY queries as tools to get undeniable proof of the system's state.
+
+Managing State: You learned how persistent Docker volumes can affect application behavior and how to manage them with --volumes.
+
+Proactive Design: You solved a race condition by baking dependencies into a Docker image.
+
+Data Type Marshalling: You learned that data must be correctly formatted when passed between systems (Python to a specialized PostgreSQL extension).
+
+Idempotency: You learned the critical importance of designing data pipelines to be safely re-runnable without causing data duplication.
