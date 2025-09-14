@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   ollama:
     image: ollama/ollama:latest
@@ -5,7 +7,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     ports:
-      - "11435:11434"
+      - "11434:11434"
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 10s
@@ -31,8 +33,36 @@ services:
       timeout: 5s
       retries: 5
 
+  ingestion:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agentic_rag_ingestion
+    # This command will now execute the new ingestion script
+    command: /app/ingestion.sh 
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: rag_user
+      DB_PASSWORD: password123
+      DB_NAME: rag_db
+      OLLAMA_HOST: ollama:11434
+    volumes:
+      - ./src:/app/src
+      - ./patient_data.csv:/app/patient_data.csv
+      - ./queries.sql:/app/queries.sql
+      - ./ingestion.sh:/app/ingestion.sh # <-- Mount the new script here
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: agentic_rag_fastapi-web-1
     restart: always
     environment:
@@ -41,18 +71,22 @@ services:
       DB_USER: rag_user
       DB_PASSWORD: password123
       DB_NAME: rag_db
-      OLLAMA_HOST: ollama:11434   # ✅ include port
+      OLLAMA_HOST: ollama:11434
       SECRET_KEY: "a_very_secret_key_that_should_be_changed"
+    command: uvicorn src.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
     volumes:
-      - .:/app
+      - ./src:/app/src
+      - ./queries.sql:/app/queries.sql
     depends_on:
       db:
         condition: service_healthy
       ollama:
         condition: service_healthy
-      
+      ingestion:
+        condition: service_completed_successfully
+
 volumes:
   ollama_data:
   postgres_data:

@@ -1,24 +1,18 @@
-# Use an official Python runtime as a parent image
 FROM python:3.11-slim
 
-# Set the working directory in the container
 WORKDIR /app
 
-# Install curl and other necessary packages
+# Install curl for startup.sh
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# Copy the requirements file into the container
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir --timeout=600 --index-url https://pypi.org/simple -r requirements.txt
-
-# Copy the rest of the application code into the container
+# Copy everything (includes startup.sh at root)
 COPY . .
 
-# Copy the startup script and make it executable
-COPY startup.sh .
-RUN chmod +x startup.sh
+# Make startup.sh executable
+RUN chmod +x /app/startup.sh
 
-# Command to run the startup script
+# Run startup script on container start
 CMD ["./startup.sh"]
