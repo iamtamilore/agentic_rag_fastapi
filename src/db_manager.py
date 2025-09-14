@@ -162,12 +162,12 @@ class DatabaseManager:
             raise
         finally: self.put_conn(conn)
 
-    def find_similar_chunks(self, patient_id: int, query_embedding: List[float], k: int = 5) -> List[str]:
+    def find_similar_chunks(self, patient_id: int, query_embedding: List[float], k: int = 5) -> List[Dict[str, Any]]:
         conn = self.get_conn()
         try:
             with conn.cursor() as cur:
                 cur.execute(sql.SQL(self.queries['find_similar_chunks']), (patient_id, str(query_embedding), k))
-                return [row['content'] for row in cur.fetchall()]
+                return cur.fetchall()
         finally: self.put_conn(conn)
 
     def find_patient_by_details(self, first_name: str, last_name: str, dob: str) -> int | None:

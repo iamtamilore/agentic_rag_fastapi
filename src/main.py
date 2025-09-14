@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 import os
 import re
-from typing import List, Annotated
+from typing import List, Annotated, Dict, Any
 
 from .db_manager import DatabaseManager
 from .auth.security import verify_password, create_access_token, verify_access_token
@@ -67,8 +67,17 @@ async def find_patient(request: PatientLookupRequest, current_doctor: Annotated[
 @app.post("/ask", response_model=QueryResponse)
 async def ask_question(request: QueryRequest, current_doctor: Annotated[Doctor, Depends(get_current_doctor)]):
     question_embedding = embeddings_model.embed_query(request.question)
-    retrieved_docs = db_manager.find_similar_chunks(request.patient_id, question_embedding, k=3)
-    context_string = "\n\n".join(retrieved_docs) if retrieved_docs else "No relevant medical records were found for this patient."
+    
+    # Updated to correctly handle the richer data from db_manager
+    retrieved_docs_with_metadata = db_manager.find_similar_chunks(request.patient_id, question_embedding, k=3)
+    
+    retrieved_content = []
+    if retrieved_docs_with_metadata:
+        for doc in retrieved_docs_with_metadata:
+            formatted_doc = f"Date: {doc['event_date'].strftime('%Y-%m-%d')}\nPhysician: {doc['attending_physician']}\nContent: {doc['content']}"
+            retrieved_content.append(formatted_doc)
+    
+    context_string = "\n\n".join(retrieved_content) if retrieved_content else "No relevant medical records were found for this patient."
     
     prompt_template = f"CONTEXT:\n{context_string}\n\nUSER'S QUESTION:\n{request.question}\n\nANSWER:"
     final_answer = llm.invoke(prompt_template)
@@ -78,7 +87,8 @@ async def ask_question(request: QueryRequest, current_doctor: Annotated[Doctor, 
     db_manager.log_query(request.patient_id, redact_pii(request.question, patient_name), context_string, redact_pii(final_answer, patient_name))
     db_manager.log_action(doctor_id=current_doctor.id, action="ASKED_QUESTION", patient_id=request.patient_id)
     
-    return QueryResponse(answer=final_answer, retrieved_context=retrieved_docs)
+    # Return the formatted content for the API response
+    return QueryResponse(answer=final_answer, retrieved_context=retrieved_content)
 
 @app.post("/patients/{patient_id}/notes", response_model=SOAPNoteResponse)
 async def create_soap_note(patient_id: int, request: SOAPNoteRequest, current_doctor: Annotated[Doctor, Depends(get_current_doctor)]):
