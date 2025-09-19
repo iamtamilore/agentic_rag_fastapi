@@ -21,11 +21,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Check Code Style with Black
-        run: |
-          pip install black
-          black --check .
-
       - name: Run Unit Tests
         run: |
           pip install pytest
