@@ -5,7 +5,10 @@ from langchain_community.embeddings import OllamaEmbeddings
 from db_manager import DatabaseManager
 
 # Set up basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 def test_rag_retrieval():
     """
@@ -19,16 +22,15 @@ def test_rag_retrieval():
             port=os.getenv("DB_PORT", "5432"),
             user=os.getenv("DB_USER", "rag_user"),
             password=os.getenv("DB_PASSWORD", "password123"),
-            dbname=os.getenv("DB_NAME", "rag_db")
+            dbname=os.getenv("DB_NAME", "rag_db"),
         )
         embeddings_model = OllamaEmbeddings(
-            model="nomic-embed-text",
-            base_url="http://ollama:11434"
+            model="nomic-embed-text", base_url="http://ollama:11434"
         )
         logging.info("Initialization complete.")
 
         # --- 2. Define a user question ---
-        user_question = "What are the key concerns for a patient with Hypertension?" #the hypertension is editable
+        user_question = "What are the key concerns for a patient with Hypertension?"  # the hypertension is editable
         logging.info(f"Test Question: {user_question}")
 
         # --- 3. Embed the user's question ---
@@ -50,7 +52,10 @@ def test_rag_retrieval():
         print("\n---------------------------------")
 
     except Exception as e:
-        logging.error(f"An error occurred during the retrieval test: {e}", exc_info=True)
+        logging.error(
+            f"An error occurred during the retrieval test: {e}", exc_info=True
+        )
+
 
 if __name__ == "__main__":
     test_rag_retrieval()
