@@ -1,0 +1,246 @@
+Here's a complete **start-from-scratch guide** based on what we encountered:
+
+## **📋 START FROM SCRATCH GUIDE**
+
+### **1. INITIAL SETUP (First Time)**
+```bash
+# Clone or pull from GitHub
+git clone <your-repo>
+cd agentic_rag_fastapi
+
+# Make scripts executable
+chmod +x startup.sh ingestion.sh ollama_startup.sh
+```
+
+### **2. COMMON ERRORS WE FACED & FIXES**
+
+#### **Error 1: Port 11434 already in use**
+- **Cause**: Ollama running natively on host
+- **Fix**: Change port in `docker-compose.yml`:
+```bash
+sed -i 's/"11434:11434"/"11435:11434"/' docker-compose.yml
+```
+
+#### **Error 2: "patients table does not exist"**
+- **Cause**: Database init.sql didn't run (only runs on first container creation)
+- **Fix**: Manually run init.sql:
+```bash
+docker exec agentic_rag_fastapi-db-1 psql -U rag_user -d rag_db -f /docker-entrypoint-initdb.d/init.sql
+```
+
+#### **Error 3: bcrypt warning (harmless)**
+- **Cause**: Passlib/bcrypt version mismatch
+- **Fix**: Ignore - doesn't affect functionality
+
+### **3. FULL STARTUP COMMAND SEQUENCE**
+
+```bash
+# 1. Stop everything if running
+make down
+
+# 2. Check if port 11434 is in use (common issue)
+sudo lsof -i :11434
+
+# 3. If Ollama is running on host, change docker port
+sed -i 's/"11434:11434"/"11435:11434"/' docker-compose.yml
+
+# 4. Build and start
+make up
+
+# 5. If ingestion fails with "table doesn't exist", run:
+docker exec agentic_rag_fastapi-db-1 psql -U rag_user -d rag_db -f /docker-entrypoint-initdb.d/init.sql
+docker rm agentic_rag_ingestion
+make up
+
+# 6. Create doctor profile
+docker exec -it agentic_rag_fastapi-web-1 python /app/scripts/create_doctor.py
+
+# 7. Check logs
+make logs
+```
+
+### **4. JWT TOKEN WORKFLOW (HOW TO AUTHENTICATE)**
+
+```bash
+# 1. Get JWT token (copy this token!)
+curl -X 'POST' \
+  'http://localhost:8000/token' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'username=iyang.thomas&password=password123'
+
+# Response will look like:
+# {"access_token":"eyJ0eXAiOiJKV1QiLCJhbG...","token_type":"bearer"}
+
+# 2. Use token in API calls (paste your token here)
+TOKEN="eyJ0eXAiOiJKV1QiLCJhbG..."  # ← PASTE YOUR TOKEN HERE
+
+# 3. Make authenticated request
+curl -X 'POST' \
+  'http://localhost:8000/query' \
+  -H 'accept: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "first_name": "Kayode",
+    "last_name": "Alabi",
+    "date_of_birth": "1965-03-15",
+    "question": "Is the patient asthmatic?"
+  }'
+```
+
+### **5. TEST WITH DIFFERENT PATIENT DATA**
+
+```bash
+# Check current patients in database
+docker exec agentic_rag_fastapi-db-1 psql -U rag_user -d rag_db -c "SELECT first_name, last_name, date_of_birth FROM patients;"
+
+# To use different patient, check available patients first
+# Then use their details in your query
+```
+
+### **6. QUICK START SCRIPT (Save as `quick_start.sh`)**
+```bash
+#!/bin/bash
+make down
+sed -i 's/"11434:11434"/"11435:11434"/' docker-compose.yml 2>/dev/null
+make up
+sleep 10
+docker exec agentic_rag_fastapi-db-1 psql -U rag_user -d rag_db -f /docker-entrypoint-initdb.d/init.sql 2>/dev/null
+docker rm agentic_rag_ingestion 2>/dev/null
+make up
+echo "=== Getting JWT Token ==="
+curl -s -X 'POST' 'http://localhost:8000/token' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'username=iyang.thomas&password=password123' | python3 -m json.tool
+echo "=== Access API at: http://localhost:8000/docs ==="
+```
+
+### **7. TROUBLESHOOTING CHECKLIST**
+```bash
+# Is Ollama running on host?
+sudo lsof -i :11434
+
+# Are tables created?
+docker exec agentic_rag_fastapi-db-1 psql -U rag_user -d rag_db -c "\dt"
+
+# Is ingestion complete?
+docker logs agentic_rag_ingestion | tail -5
+
+# Is web service running?
+curl -s http://localhost:8000/docs 2>/dev/null | grep -o "<title>.*</title>"
+```
+
+### **8. COMPLETE TEST FLOW**
+```bash
+# 1. Start fresh
+make down && make up
+
+# 2. Get token (SAVE THIS OUTPUT!)
+curl -X 'POST' 'http://localhost:8000/token' \
+  -d 'username=iyang.thomas&password=password123'
+
+# 3. Test query (replace TOKEN with actual token)
+curl -X 'POST' 'http://localhost:8000/query' \
+  -H 'Authorization: Bearer YOUR_TOKEN_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "first_name": "Kayode",
+    "last_name": "Alabi", 
+    "date_of_birth": "1965-03-15",
+    "question": "What was the diagnosis in the last visit?"
+  }'
+```
+
+**Key Points:**
+1. **Port conflict** is the most common issue → change 11434 to 11435
+2. **Database tables** might need manual initialization
+3. **JWT token** must be obtained first via `/token` endpoint
+4. **Copy-paste the token** into Authorization header for all API calls
+
+The app uses **Bearer token authentication** - you get a token once, then use it for all subsequent requests until it expires.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+AFTER THE APP STARTS TEST USING THIS ; test_doctor;
+username = "iyang.thomas"
+plain_password = "password123"
+full_name = "Dr. Iyang Thomas"
+role = "clinician"
+
+
+
+✅ Application Successfully Started!
+Current Status:
+✅ Database: Running with 3 patients and 45 medical events inserted
+
+✅ Ollama: Running on port 11435 (to avoid conflict with your host Ollama on 11434)
+
+✅ Ingestion: Completed successfully
+
+✅ Web Service: Running and accessible
+
+✅ Doctor Profile: Created successfully
+
+Access Information:
+FastAPI Application: http://localhost:8000
+
+API Documentation: http://localhost:8000/docs
+
+Ollama: http://localhost:11435 (Docker container)
+
+PostgreSQL: localhost:5433 (username: rag_user, password: password123, database: rag_db)
+
+Login Credentials:
+Username: iyang.thomas
+
+Password: password123
+
+Sample Patient Data (from README):
+json
+{
+  "first_name": "Kayode",
+  "last_name": "Alabi", 
+  "date_of_birth": "1965-03-15"
+}
+Test the Application:
+You can now:
+
+Access http://localhost:8000/docs to see the API documentation
+
+Use the /token endpoint to get an access token with the credentials above
+
+Try sample queries like:
+
+"Tell me about this patient's last visit"
+
+"Is the patient asthmatic?"
+
+To check logs:
+bash
+make logs
+To stop the application:
+bash
+make down
+The application is now fully functional! The warning about bcrypt.__about__ is just a deprecation warning and doesn't affect functionality. All services are running correctly.,, 
