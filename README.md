@@ -1,7 +1,37 @@
 # Smart Medical Records Engine
 
-A doctor asks a question in plain English. The system answers using *that specific
-patient's* actual records - and nothing else.
+**Helps a doctor find the one thing in your file that matters, before your appointment ends.**
+
+---
+
+## Why this matters
+
+Imagine your doctor has ten minutes with you.
+
+Somewhere in your medical file - which might be three years of notes from different visits,
+different doctors, different hospitals - there is a line saying you had a bad reaction to a
+particular medicine.
+
+Your doctor is about to prescribe you something. Do they remember that line? Did they even
+see it? Nobody can read three years of notes in ten minutes.
+
+So this is a search box a doctor can talk to normally. They ask *"has this patient ever
+reacted badly to any medication?"* and it finds the answer in **that patient's own notes**,
+and shows them the actual note it found it in.
+
+Three things make it trustworthy, and all three matter more than the clever part:
+
+- **It only reads YOUR file.** Not a similar patient's. Not someone with the same illness.
+  Yours.
+- **Your records never leave the hospital.** The AI runs on the hospital's own computer, not
+  on some company's servers far away.
+- **Every look is written down.** If anyone ever asks "who opened this patient's file?",
+  there is an answer.
+
+A wrong medical answer given confidently is worse than no answer at all. Everything below
+is built around not doing that.
+
+---
 
 ## The problem
 
