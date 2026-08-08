@@ -1,3 +1,6 @@
+> **[Read the full write-up](https://iamtamilore.github.io/p/clinical-rag/)** with diagrams, plots and results.
+> Part of [Taiwo Alabi's work](https://iamtamilore.github.io).
+
 # Smart Medical Records Engine
 
 **Helps a doctor find the one thing in your file that matters, before your appointment ends.**
